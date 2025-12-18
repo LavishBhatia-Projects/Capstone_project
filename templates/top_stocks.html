@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row align-items-end mb-4 fade-in-up">
+  <div class="col-lg-8">
+    <nav aria-label="breadcrumb" class="mb-2">
+      <ol class="breadcrumb bg-transparent p-0 m-0 small fw-bold text-uppercase">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}"
+            class="text-secondary text-decoration-none">Dashboard</a></li>
+        <li class="breadcrumb-item active text-primary" aria-current="page">Top Picks</li>
+      </ol>
+    </nav>
+    <h1 class="display-6 fw-bold mb-0">Daily Top Opportunities</h1>
+  </div>
+  <div class="col-lg-4 text-lg-end">
+    <span class="text-secondary small">
+      <i class="far fa-clock me-1"></i> Updated: {{ now() if now is defined else 'Just now' }}
+    </span>
+  </div>
+</div>
+
+<div
+  class="alert alert-warning border border-warning bg-warning bg-opacity-10 rounded-3 mb-4 d-flex align-items-center fade-in-up delay-100"
+  role="alert">
+  <i class="fas fa-exclamation-triangle me-3 fs-5"></i>
+  <div>
+    <strong>Analyst Note:</strong> These are AI-generated predictions based on technical momentum. Always conduct your
+    own due diligence.
+  </div>
+</div>
+
+{% if not top_stocks %}
+<div class="modern-card p-5 text-center fade-in-up delay-200">
+  <div class="mb-3 text-secondary opacity-50">
+    <i class="fas fa-search fa-3x"></i>
+  </div>
+  <h4 class="mb-2">No High-Confidence Signals Found</h4>
+  <p class="text-secondary mb-4">Our algorithms haven't found any stock crossing the momentum threshold in the current
+    screener list.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary-modern">Back to Dashboard</a>
+</div>
+{% else %}
+<div class="modern-card fade-in-up delay-200">
+  <div class="card-header-modern">
+    <span><i class="fas fa-list-ol me-2"></i>Screener Results</span>
+    <span class="badge bg-success-subtle text-success border border-success-subtle">
+      {{ top_stocks|length }} Matches
+    </span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="bg-light">
+        <tr>
+          <th class="ps-4 py-3 border-0 text-secondary text-uppercase small fw-bold">#</th>
+          <th class="py-3 border-0 text-secondary text-uppercase small fw-bold">Symbol</th>
+          <th class="py-3 border-0 text-secondary text-uppercase small fw-bold">Price</th>
+          <th class="py-3 border-0 text-secondary text-uppercase small fw-bold">Forecast</th>
+          <th class="py-3 border-0 text-secondary text-uppercase small fw-bold">Potential</th>
+          <th class="py-3 border-0 text-secondary text-uppercase small fw-bold">Sentiment</th>
+          <th class="pe-4 py-3 border-0 text-secondary text-uppercase small fw-bold text-end">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stock in top_stocks %}
+        <tr>
+          <td class="ps-4 fw-bold text-secondary text-opacity-50">{{ loop.index }}</td>
+          <td>
+            <a href="{{ url_for('insertintotable', nm=stock.quote) }}"
+              class="fw-bold text-primary text-decoration-none">
+              {{ stock.quote }}
+            </a>
+          </td>
+          <td class="font-monospace">₹{{ "%.2f"|format(stock.today_data.close) }}</td>
+          <td class="font-monospace text-muted">
+            <div>₹{{ "%.2f"|format(stock.lr_pred) }}</div>
+            {% if stock.error_lr %}
+            <div class="small fw-normal text-secondary opacity-75" title="Root Mean Squared Error (Model Accuracy)">
+              ±{{ "%.2f"|format(stock.error_lr) }}
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge bg-success-subtle text-success">
+              <i class="fas fa-caret-up me-1"></i>{{ "%.2f"|format(stock.potential_gain_pct) }}%
+            </span>
+          </td>
+          <td>
+            <span class="fw-medium text-secondary">
+              {{ "%.3f"|format(stock.sentiment) }}
+            </span>
+          </td>
+          <td class="pe-4 text-end">
+            <span class="badge-pill-modern 
+                            {% if stock.decision == 'BUY' %}success
+                            {% elif stock.decision == 'HOLD' %}warning
+                            {% else %}bg-secondary text-white
+                            {% endif %}">
+              {{ stock.decision }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
